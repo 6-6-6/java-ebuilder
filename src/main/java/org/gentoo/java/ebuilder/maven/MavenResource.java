@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.gentoo.java.ebuilder.Config;
 
 /**
  * Describes the "resource" element of pom.xml
@@ -38,8 +39,8 @@ public class MavenResource {
      * Creates new instance.
      */
     public MavenResource() {
-        this.originDirectory = Paths.get("");
-        this.targetDirectory = Paths.get("");
+        this.originDirectory = null;
+        this.targetDirectory = null;
     }
 
     /**
@@ -48,8 +49,12 @@ public class MavenResource {
      * @param originDirectory {@link #originDirectory}
      */
     public MavenResource(Path originDirectory) {
-        this.originDirectory = originDirectory;
-        this.targetDirectory = Paths.get("");
+        if (isValidResourcesDir(originDirectory)) {
+            this.originDirectory = originDirectory;
+        } else {
+            this.originDirectory = null;
+        }
+        this.targetDirectory = null;
     }
 
     /**
@@ -59,7 +64,11 @@ public class MavenResource {
      * @param targetDirectory {@link #targetDirectory}
      */
     public MavenResource(Path originDirectory, Path targetDirectory) {
-        this.originDirectory = originDirectory;
+        if (isValidResourcesDir(originDirectory)) {
+            this.originDirectory = originDirectory;
+        } else {
+            this.originDirectory = null;
+        }
         this.targetDirectory = targetDirectory;
     }
 
@@ -73,7 +82,11 @@ public class MavenResource {
      */
     public MavenResource(Path originDirectory,
             Path targetDirectory, Collection<Path> includedFiles) {
-        this.originDirectory = originDirectory;
+        if (isValidResourcesDir(originDirectory)) {
+            this.originDirectory = originDirectory;
+        } else {
+            this.originDirectory = null;
+        }
         this.targetDirectory = targetDirectory;
         this.includedFiles.addAll(includedFiles);
     }
@@ -84,7 +97,11 @@ public class MavenResource {
      * @param originDirectory {@link #originDirectory}
      */
     public void setOriginDirectory(Path originDirectory) {
-        this.originDirectory = originDirectory;
+        if (isValidResourcesDir(originDirectory)) {
+            this.originDirectory = originDirectory;
+        } else {
+            this.originDirectory = null;
+        }
     }
 
     /**
@@ -105,7 +122,7 @@ public class MavenResource {
         this.targetDirectory = targetDirectory;
     }
 
-    /**
+    /**`
      * Getter for {@link #targetDirectory}.
      *
      * @return {@link #targetDirectory}
@@ -117,19 +134,25 @@ public class MavenResource {
     /**
      * Add a path to {@link #includedFiles}.
      *
-     * @param Path
+     * @param includedFile path to the file
      */
     public void addIncludedFiles(Path includedFile) {
-        this.includedFiles.add(includedFile);
+        if (isValidResourcesDir(Paths.get(
+                originDirectory.toString(),
+                includedFile.toString()))) {
+            this.includedFiles.add(includedFile);
+        }
     }
 
     /**
      * Add a collection of pathes to {@link #includedFiles}.
      *
-     * @param Collection<Path>
+     * @param includedFiles Collection<Path>
      */
     public void addIncludedFiles(Collection<Path> includedFiles) {
-        this.includedFiles.addAll(includedFiles);
+        for (Path includedFile : includedFiles) {
+            addIncludedFiles(includedFile);
+        }
     }
 
     /**
@@ -142,28 +165,51 @@ public class MavenResource {
     }
 
     /**
+     * Checks whether the provided path is a valid directory for resources. It
+     * must exist and contain at least one file.
+     *
+     * @param resources path to resources
+     *
+     * @return true if the resources directory is valid, otherwise false
+     */
+    private boolean isValidResourcesDir(final Path resources) {
+        return resources.toFile().exists()
+                && resources.toFile().list().length != 0;
+    }
+
+    /**
      * format the output to satisfy java-pkg-simple.eclass
      *
-     * @return "originDir" if targetDir and includedFiles are empty,
+     * @return null if the origin dir does not exits,
+     *         "originDir" if targetDir and includedFiles are empty,
      *         "originDir:targetDir" if includedFiles is empty,
      *         "originDir:targetDir:includedFile1|File2" otherwise.
      */
-    public String toString() {
+    public String toString(final Config config) {
         final String resourceDir;
 
-        if (targetDirectory.toString() == ""
+        if (originDirectory == null) {
+            resourceDir = null;
+        } else if (targetDirectory == null
                 && includedFiles.isEmpty()) {
-            resourceDir = originDirectory.toString();
+            resourceDir = config.getWorkdir().relativize(originDirectory).
+                    toString();
         } else if (includedFiles.isEmpty()) {
-            resourceDir = originDirectory.toString() + ":"
+            resourceDir = config.getWorkdir().relativize(originDirectory).
+                    toString() + ":"
                     + targetDirectory.toString();
         } else {
+            if (targetDirectory == null) {
+                targetDirectory = Paths.get("");
+            }
             final List<String> includedFileList = includedFiles.stream().
                     map(s -> s.toString()).
                     collect(Collectors.toList());
-            final SortedSet<String> includedFileSet = new TreeSet<String>(includedFileList);
+            final SortedSet<String> includedFileSet =
+                    new TreeSet<String>(includedFileList);
 
-            resourceDir = originDirectory.toString() + ":"
+            resourceDir = config.getWorkdir().relativize(originDirectory).
+                    toString() + ":"
                     + targetDirectory.toString() + ":"
                     + String.join("|", includedFileSet);
         }
