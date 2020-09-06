@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.gentoo.java.ebuilder.maven.MavenResource;
 
 /**
  * Contains information about maven project collected from pom.xml.
@@ -55,7 +56,7 @@ public class MavenProject {
     /**
      * List of resource directories.
      */
-    private final List<Path> resourceDirectories = new ArrayList<>(10);
+    private final List<MavenResource> resourceDirectories = new ArrayList<>(10);
     /**
      * Source directory.
      */
@@ -75,7 +76,7 @@ public class MavenProject {
     /**
      * Test resource directories.
      */
-    private final List<Path> testResourceDirectories = new ArrayList<>(10);
+    private final List<MavenResource> testResourceDirectories = new ArrayList<>(10);
     /**
      * Test source directory.
      */
@@ -117,39 +118,23 @@ public class MavenProject {
     /**
      * Adds path to {@link #resourceDirectories}.
      *
-     * @param path resource path
-     *
-     * @return true if the path was added, otherwise false
-     *
-     * @see #isValidResourcesDir(java.nio.file.Path)
+     * @param resource MavenResource instance
      */
-    public boolean addResourceDirectory(final Path path) {
-        if (!isValidResourcesDir(path)) {
-            return false;
+    public void addResourceDirectory(final MavenResource resource) {
+        if (resource.getOriginDirectory() != null) {
+            resourceDirectories.add(resource);
         }
-
-        resourceDirectories.add(path);
-
-        return true;
     }
 
     /**
-     * Adds path to {@link #testResourceDirectories}. The path must be valid.
+     * Adds path to {@link #testResourceDirectories}.
      *
-     * @param path resource path
-     *
-     * @return true if the path was added, otherwise false
-     *
-     * @see #isValidResourcesDir(java.nio.file.Path)
+     * @param resource MavenResource instance
      */
-    public boolean addTestResourceDirectory(final Path path) {
-        if (!isValidResourcesDir(path)) {
-            return false;
+    public void addTestResourceDirectory(final MavenResource resource) {
+        if (resource.getOriginDirectory() != null) {
+            testResourceDirectories.add(resource);
         }
-
-        testResourceDirectories.add(path);
-
-        return true;
     }
 
     /**
@@ -410,7 +395,7 @@ public class MavenProject {
      *
      * @return {@link #resourceDirectories}
      */
-    public List<Path> getResourceDirectories() {
+    public List<MavenResource> getResourceDirectories() {
         return Collections.unmodifiableList(resourceDirectories);
     }
 
@@ -515,7 +500,7 @@ public class MavenProject {
      *
      * @return {@link #testResourceDirectories}
      */
-    public List<Path> getTestResourceDirectories() {
+    public List<MavenResource> getTestResourceDirectories() {
         return Collections.unmodifiableList(testResourceDirectories);
     }
 
@@ -618,18 +603,5 @@ public class MavenProject {
         });
 
         return result;
-    }
-
-    /**
-     * Checks whether the provided path is a valid directory for resources. It
-     * must exist and contain at least one file.
-     *
-     * @param resources path to resources
-     *
-     * @return true if the resources directory is valid, otherwise false
-     */
-    private boolean isValidResourcesDir(final Path resources) {
-        return resources.toFile().exists()
-                && resources.toFile().list().length != 0;
     }
 }

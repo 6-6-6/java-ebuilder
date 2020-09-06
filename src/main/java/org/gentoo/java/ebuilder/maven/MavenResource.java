@@ -99,8 +99,6 @@ public class MavenResource {
     public void setOriginDirectory(Path originDirectory) {
         if (isValidResourcesDir(originDirectory)) {
             this.originDirectory = originDirectory;
-        } else {
-            this.originDirectory = null;
         }
     }
 
@@ -137,7 +135,7 @@ public class MavenResource {
      * @param includedFile path to the file
      */
     public void addIncludedFiles(Path includedFile) {
-        if (isValidResourcesDir(Paths.get(
+        if (isValidResourcesFile(Paths.get(
                 originDirectory.toString(),
                 includedFile.toString()))) {
             this.includedFiles.add(includedFile);
@@ -175,6 +173,17 @@ public class MavenResource {
     private boolean isValidResourcesDir(final Path resources) {
         return resources.toFile().exists()
                 && resources.toFile().list().length != 0;
+    }
+
+    /**
+     * Checks whether the provided path is a valid file.
+     *
+     * @param resources path to resources
+     *
+     * @return true if the resourcesfile is valid, otherwise false
+     */
+    private boolean isValidResourcesFile(final Path resources) {
+        return resources.toFile().isFile();
     }
 
     /**

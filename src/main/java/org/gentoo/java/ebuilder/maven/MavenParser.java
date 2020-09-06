@@ -17,6 +17,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import org.gentoo.java.ebuilder.Config;
 import org.gentoo.java.ebuilder.maven.MavenLicenses;
+import org.gentoo.java.ebuilder.maven.MavenResource;
 
 /**
  * Parser for parsing pom.xml into project collector class.
@@ -683,14 +684,53 @@ public class MavenParser {
      */
     private void parseResource(final MavenProject mavenProject,
             final XMLStreamReader reader) throws XMLStreamException {
+        MavenResource resource = new MavenResource();
+        List<Path> files = new ArrayList<Path>(8);
+
         while (reader.hasNext()) {
             reader.next();
 
             if (reader.isStartElement()) {
                 switch (reader.getLocalName()) {
                     case "directory":
-                        mavenProject.addResourceDirectory(
+                        resource.setOriginDirectory(
                                 Paths.get(reader.getElementText()));
+                        break;
+                    case "targetPath":
+                        resource.setTargetDirectory(
+                                Paths.get(reader.getElementText()));
+                        break;
+                    case "includes":
+                        parseResourceIncludes(files, reader);
+                        break;
+                    default:
+                        consumeElement(reader);
+                }
+            } else if (reader.isEndElement()) {
+                resource.addIncludedFiles(files);
+                mavenProject.addResourceDirectory(resource);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Parses includes element of resource element
+     *
+     * @param reader       XML stream reader
+     *
+     * @throws XMLStreamException Thrown if problem occurred while reading XML
+     *                            stream.
+     */
+    private void parseResourceIncludes(List<Path> includedFiles,
+            final XMLStreamReader reader) throws XMLStreamException {
+        while (reader.hasNext()) {
+            reader.next();
+
+            if (reader.isStartElement()) {
+                switch (reader.getLocalName()) {
+                    case "include":
+                        includedFiles.add(Paths.get(reader.getElementText()));
                         break;
                     default:
                         consumeElement(reader);
@@ -740,19 +780,31 @@ public class MavenParser {
      */
     private void parseTestResource(final MavenProject mavenProject,
             final XMLStreamReader reader) throws XMLStreamException {
+        MavenResource resource = new MavenResource();
+        List<Path> files = new ArrayList<Path>(8);
+
         while (reader.hasNext()) {
             reader.next();
 
             if (reader.isStartElement()) {
                 switch (reader.getLocalName()) {
                     case "directory":
-                        mavenProject.addTestResourceDirectory(
+                        resource.setOriginDirectory(
                                 Paths.get(reader.getElementText()));
+                        break;
+                    case "targetPath":
+                        resource.setTargetDirectory(
+                                Paths.get(reader.getElementText()));
+                        break;
+                    case "includes":
+                        parseResourceIncludes(files, reader);
                         break;
                     default:
                         consumeElement(reader);
                 }
             } else if (reader.isEndElement()) {
+                resource.addIncludedFiles(files);
+                mavenProject.addTestResourceDirectory(resource);
                 return;
             }
         }

@@ -906,8 +906,7 @@ public class MavenEbuilder {
             mavenProject.getResourceDirectories().forEach((directory) -> {
                 writer.print("\t\"");
                 writer.print(replaceWithVars(
-                        config.getWorkdir().relativize(directory).toString(),
-                        config));
+                        directory.toString(config), config));
                 writer.println('"');
             });
 
@@ -947,8 +946,8 @@ public class MavenEbuilder {
                 mavenProject.getTestResourceDirectories().
                         forEach((directory) -> {
                             writer.print("\t\"");
-                            writer.print(replaceWithVars(config.getWorkdir().
-                                    relativize(directory).toString(), config));
+                            writer.print(replaceWithVars(
+                                    directory.toString(config), config));
                             writer.println('"');
                         });
 
