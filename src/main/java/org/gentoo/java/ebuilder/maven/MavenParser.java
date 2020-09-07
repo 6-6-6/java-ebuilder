@@ -685,7 +685,7 @@ public class MavenParser {
     private void parseResource(final MavenProject mavenProject,
             final XMLStreamReader reader) throws XMLStreamException {
         MavenResource resource = new MavenResource();
-        List<Path> files = new ArrayList<Path>(8);
+        List<String> files = new ArrayList<>(8);
 
         while (reader.hasNext()) {
             reader.next();
@@ -701,13 +701,28 @@ public class MavenParser {
                                 Paths.get(reader.getElementText()));
                         break;
                     case "includes":
-                        parseResourceIncludes(files, reader);
+                        resource.setAction(0);
+                        parseResourceFiles(files, reader, "include");
+                        break;
+                    case "excludes":
+                        resource.setAction(1);
+                        parseResourceFiles(files, reader, "exclude");
+                        break;
+                    case "filtering":
+                        switch (reader.getElementText()) {
+                            case "true":
+                                resource.setFiltering(true);
+                                break;
+                            case "false":
+                                resource.setFiltering(false);
+                                break;
+                        }
                         break;
                     default:
                         consumeElement(reader);
                 }
             } else if (reader.isEndElement()) {
-                resource.addIncludedFiles(files);
+                resource.addResourceFiles(files);
                 mavenProject.addResourceDirectory(resource);
                 return;
             }
@@ -722,18 +737,17 @@ public class MavenParser {
      * @throws XMLStreamException Thrown if problem occurred while reading XML
      *                            stream.
      */
-    private void parseResourceIncludes(List<Path> includedFiles,
-            final XMLStreamReader reader) throws XMLStreamException {
+    private void parseResourceFiles(final List<String> resourceFiles,
+            final XMLStreamReader reader, final String key)
+                    throws XMLStreamException {
         while (reader.hasNext()) {
             reader.next();
 
             if (reader.isStartElement()) {
-                switch (reader.getLocalName()) {
-                    case "include":
-                        includedFiles.add(Paths.get(reader.getElementText()));
-                        break;
-                    default:
-                        consumeElement(reader);
+                if (reader.getLocalName() == key) {
+                    resourceFiles.add(reader.getElementText());
+                } else {
+                    consumeElement(reader);
                 }
             } else if (reader.isEndElement()) {
                 return;
@@ -781,7 +795,7 @@ public class MavenParser {
     private void parseTestResource(final MavenProject mavenProject,
             final XMLStreamReader reader) throws XMLStreamException {
         MavenResource resource = new MavenResource();
-        List<Path> files = new ArrayList<Path>(8);
+        List<String> files = new ArrayList<>(8);
 
         while (reader.hasNext()) {
             reader.next();
@@ -797,13 +811,28 @@ public class MavenParser {
                                 Paths.get(reader.getElementText()));
                         break;
                     case "includes":
-                        parseResourceIncludes(files, reader);
+                        resource.setAction(0);
+                        parseResourceFiles(files, reader, "include");
+                        break;
+                    case "excludes":
+                        resource.setAction(1);
+                        parseResourceFiles(files, reader, "exclude");
+                        break;
+                    case "filtering":
+                        switch (reader.getElementText()) {
+                            case "true":
+                                resource.setFiltering(true);
+                                break;
+                            case "false":
+                                resource.setFiltering(false);
+                                break;
+                        }
                         break;
                     default:
                         consumeElement(reader);
                 }
             } else if (reader.isEndElement()) {
-                resource.addIncludedFiles(files);
+                resource.addResourceFiles(files);
                 mavenProject.addTestResourceDirectory(resource);
                 return;
             }
